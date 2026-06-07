@@ -68,13 +68,14 @@ Return your response strictly as a valid JSON object matching this schema, witho
     // STEP 2: Database Vector Search (Retrieve local context chunks)
     steps.push(`Generating vector embedding for database query: "${plan.dbQuery}"`)
     const embedResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
-          content: { parts: [{ text: plan.dbQuery }] }
+          model: "models/gemini-embedding-2",
+          content: { parts: [{ text: plan.dbQuery }] },
+          outputDimensionality: 768
         })
       }
     )

@@ -21,19 +21,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 1. Generate embedding for the user message using text-embedding-004
+    // 1. Generate embedding for the user message using gemini-embedding-2
     const embedResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
+          model: "models/gemini-embedding-2",
           content: {
             parts: [{ text: message }],
           },
+          outputDimensionality: 768
         }),
       }
     )

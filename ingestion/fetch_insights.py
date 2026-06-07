@@ -91,9 +91,10 @@ def extract_insights(text):
 def generate_embedding(text):
     try:
         result = genai.embed_content(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-2",
             content=text,
-            task_type="retrieval_document"
+            task_type="retrieval_document",
+            output_dimensionality=768
         )
         return result.get('embedding', {}).get('values', [])
     except Exception as e:

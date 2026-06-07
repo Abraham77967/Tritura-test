@@ -38,11 +38,12 @@ def search_tritura_archive(query: str, limit: int = 5) -> str:
         return "Error: GEMINI_API_KEY is not configured on the server."
     
     try:
-        # 1. Generate query embedding using text-embedding-004
+        # 1. Generate query embedding using gemini-embedding-2
         result = genai.embed_content(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-2",
             content=query,
-            task_type="retrieval_document"
+            task_type="retrieval_query",
+            output_dimensionality=768
         )
         embedding = result.get('embedding', {}).get('values', [])
         
