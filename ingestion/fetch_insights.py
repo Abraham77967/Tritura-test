@@ -8,6 +8,7 @@ import urllib.parse
 import google.generativeai as genai
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from datetime import datetime
 import time
 import re
 
@@ -65,8 +66,18 @@ Return the result strictly as a valid JSON object matching this schema, without 
   "contrarian_view": "What is the strongest counter-argument or primary risk to this thesis?",
   "signal_score": <An integer from 1 to 10 evaluating the density and importance of the information>
 }
+}
 Ensure the response can be directly parsed by json.loads().
 """
+
+def update_status(message, is_finished=False):
+    try:
+        data = {"current_status": message}
+        if is_finished:
+            data["last_fetched_at"] = datetime.utcnow().isoformat() + "Z"
+        supabase.table("system_status").update(data).eq("id", 1).execute()
+    except Exception as e:
+        print(f"Failed to update status: {e}")
 
 def extract_insights(text):
     try:
@@ -139,6 +150,7 @@ def fetch_youtube_insights():
     api = YouTubeTranscriptApi()
     
     for query in SEARCH_QUERIES["youtube"]:
+        update_status(f"Searching YouTube: {query}")
         print(f"Searching YouTube for: {query}")
         try:
             videosSearch = VideosSearch(query, limit=5)
@@ -154,6 +166,7 @@ def fetch_youtube_insights():
                     continue
                     
                 print(f"New video found: {video_id} ({video['title']}). Fetching transcript...")
+                update_status(f"Fetching transcript: {video['title'][:40]}...")
                 try:
                     transcript_list = api.list(video_id).find_transcript(['en']).fetch()
                     text = " ".join([t.text for t in transcript_list])
@@ -161,6 +174,7 @@ def fetch_youtube_insights():
                     # Truncate text if it's exceptionally long
                     text = text[:50000] 
                     
+                    update_status(f"AI Processing: {video['title'][:40]}...")
                     insights = extract_insights(text)
                     if insights:
                         if insights.get("is_relevant") is False:
@@ -175,6 +189,7 @@ def fetch_youtube_insights():
                         )
                         if insight_id:
                             save_chunks(insight_id, text)
+                        update_status("Sleeping 15s to respect API limits...")
                         time.sleep(15) # Avoid Gemini rate limits
                 except Exception as e:
                     print(f"Failed to process YouTube video {video_id}: {e}")
@@ -184,6 +199,7 @@ def fetch_youtube_insights():
 
 def fetch_rss_insights():
     for query in SEARCH_QUERIES["rss"]:
+        update_status(f"Searching News: {query}")
         print(f"Searching Google News for: {query}")
         encoded_query = urllib.parse.quote(query + " when:1d")
         rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
@@ -204,6 +220,7 @@ def fetch_rss_insights():
                 source_name = entry.source.title if hasattr(entry, 'source') else 'Google News'
                 
                 print(f"New article found at {url}. Extracting insights...")
+                update_status(f"AI Processing: {entry.title[:40]}...")
                 # Try to get full content if available, else use description
                 content = entry.get('content', [{}])[0].get('value', '')
                 if not content:
@@ -230,6 +247,7 @@ def fetch_rss_insights():
                     )
                     if insight_id:
                         save_chunks(insight_id, text)
+                    update_status("Sleeping 15s to respect API limits...")
                     time.sleep(15) # Avoid Gemini rate limits
         except Exception as e:
             print(f"Failed to process RSS feed {query}: {e}")
@@ -261,6 +279,8 @@ def save_to_supabase(source_name, url, content_type, insights):
 
 if __name__ == "__main__":
     print("Starting data ingestion...")
+    update_status("Initializing Ingestion Pipeline...")
     fetch_youtube_insights()
     fetch_rss_insights()
+    update_status("Idle", is_finished=True)
     print("Ingestion complete.")

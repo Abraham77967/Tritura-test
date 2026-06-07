@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { InsightCard } from "@/components/InsightCard"
 import { TimeFilter, TimeRange } from "@/components/TimeFilter"
+import { IngestionProgress } from "@/components/IngestionProgress"
 import { supabase, Insight } from "@/lib/supabase"
 import { subWeeks, subMonths } from "date-fns"
 import { 
@@ -137,6 +138,7 @@ export default function Home() {
             <p className="text-xs text-zinc-400 leading-relaxed">
               <span className="italic font-semibold text-zinc-200">trītūra</span> (Latin) • The act of separating grain from chaff. Filtering out the noise to deliver high-signal AI, compute hardware, and tech financials intelligence.
             </p>
+            <IngestionProgress />
           </div>
 
           {/* Compact Stats Capsule */}
